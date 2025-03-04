@@ -11,7 +11,9 @@ A beautiful, modern web application that allows users to paste a YouTube URL and
 - Click on any line in the transcript to jump to that timestamp in the video
 - Dark mode support that automatically adapts to system preferences
 - Export transcript functionality to save the content as a text file
-- Responsive design that works on both desktop and mobile devices
+- Copy transcript to clipboard with a single click
+- Fully responsive design with optimized mobile experience
+- Mobile-friendly UI with space-saving icon-only buttons
 - Custom logo and branding
 
 ## Technologies Used
@@ -66,7 +68,8 @@ A beautiful, modern web application that allows users to paste a YouTube URL and
 4. The transcript will appear on the right side with timestamps
 5. Click on any line in the transcript to jump to that point in the video
 6. Use the export button to download the transcript as a text file
-7. The app automatically adapts to your system's light/dark mode preference
+7. Use the copy button to quickly copy the entire transcript to your clipboard
+8. The app automatically adapts to your system's light/dark mode preference
 
 ## Deployment
 

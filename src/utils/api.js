@@ -1,50 +1,61 @@
 import axios from 'axios';
 
-// Function to fetch transcript from YouTube
-export async function fetchTranscript(videoId) {
+/**
+ * Fetches the transcript for a YouTube video
+ * @param {string} videoId - The YouTube video ID
+ * @returns {Promise<Object>} - Object containing success status and transcript data or error
+ */
+export const fetchTranscript = async (videoId) => {
   try {
-    // Using our local server API endpoint
-    const response = await axios.get(`/api/transcript?videoId=${videoId}`, {
-      // Add a timeout to prevent hanging requests
-      timeout: 30000,
-      // Ensure we're getting JSON
-      headers: {
-        'Accept': 'application/json'
-      }
+    // Add a timeout to the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    const response = await fetch(`/api/transcript?videoId=${videoId}`, {
+      signal: controller.signal
     });
     
-    if (response.data && response.data.success) {
-      // Check if transcript array is present and has items
-      if (Array.isArray(response.data.transcript) && response.data.transcript.length > 0) {
-        return {
-          success: true,
-          transcript: response.data.transcript
-        };
-      } else {
-        throw new Error('Transcript data is invalid or empty');
-      }
-    } else {
-      throw new Error(response.data.message || 'No transcript found');
-    }
-  } catch (error) {
-    // Provide more detailed error information
-    let errorMessage = 'Failed to fetch transcript';
+    // Clear the timeout
+    clearTimeout(timeoutId);
     
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
-    } else if (error.request) {
-      // The request was made but no response was received
-      errorMessage = 'No response from server';
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      errorMessage = error.message;
+    if (!response.ok) {
+      // Try to parse the error message from the response
+      try {
+        const errorData = await response.json();
+        return {
+          success: false,
+          error: errorData.message || `Server error: ${response.status}`
+        };
+      } catch (e) {
+        // If we can't parse the JSON, use the status text
+        return {
+          success: false,
+          error: `Server error: ${response.status} ${response.statusText}`
+        };
+      }
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Handle specific error types
+    if (error.name === 'AbortError') {
+      return {
+        success: false,
+        error: 'Request timed out. The server might be experiencing high load or connectivity issues.'
+      };
+    }
+    
+    if (error.message && error.message.includes('Failed to fetch')) {
+      return {
+        success: false,
+        error: 'Unable to connect to the server. Please check your internet connection or try again later.'
+      };
     }
     
     return {
       success: false,
-      error: errorMessage
+      error: error.message || 'An unexpected error occurred'
     };
   }
-} 
+}; 

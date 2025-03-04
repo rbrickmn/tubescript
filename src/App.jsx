@@ -90,7 +90,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-gray-900 dark:to-gray-800 text-zinc-900 dark:text-gray-100 p-4 md:p-8 flex flex-col">
       <div className="max-w-full mx-auto flex-grow px-4">
-        <header className="mb-10">
+        <header className="mb-8 md:mb-10">
           <a 
             href="#" 
             onClick={(e) => {
@@ -104,13 +104,13 @@ function App() {
             title="Return to home"
           >
             <div className="flex flex-col items-center">
-              <img src={logo} alt="YouTube Transcript Generator Logo" className="w-24 h-24 mb-3 transition-transform hover:scale-105" />
-              <h1 className="text-4xl font-bold text-center mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+              <img src={logo} alt="YouTube Transcript Generator Logo" className="w-16 h-16 md:w-24 md:h-24 mb-2 md:mb-3 transition-transform hover:scale-105" />
+              <h1 className="text-2xl md:text-4xl font-bold text-center mb-2 md:mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                 YouTube Transcript Generator
               </h1>
             </div>
           </a>
-          <p className="text-center text-zinc-600 dark:text-gray-300 max-w-2xl mx-auto">Paste a YouTube URL to generate a transcript with clickable timestamps</p>
+          <p className="text-center text-sm md:text-base text-zinc-600 dark:text-gray-300 max-w-2xl mx-auto">Paste a YouTube URL to generate a transcript with clickable timestamps</p>
         </header>
         
         <div className={`mx-auto mb-10 ${videoId ? 'max-w-[90%]' : 'max-w-3xl'} transition-all duration-300`}>

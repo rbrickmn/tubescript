@@ -30,13 +30,24 @@ function YouTubePlayer({ videoId, setPlayerRef }) {
   return (
     <div className="aspect-video w-full rounded-lg overflow-hidden bg-zinc-900 shadow-inner" style={{ minHeight: '400px' }}>
       {videoId ? (
-        <div className={`relative w-full h-full transition-opacity duration-300 ${isPlayerReady ? 'opacity-100' : 'opacity-0'}`}>
-          <YouTube
-            videoId={videoId}
-            opts={opts}
-            onReady={onReady}
-            className="w-full h-full"
-          />
+        <div className="relative w-full h-full">
+          <div className={`w-full h-full transition-opacity duration-300 ${isPlayerReady ? 'opacity-100' : 'opacity-0'}`}>
+            <YouTube
+              videoId={videoId}
+              opts={opts}
+              onReady={onReady}
+              className="w-full h-full"
+            />
+          </div>
+          
+          {/* Loading overlay */}
+          <div className={`absolute inset-0 flex items-center justify-center bg-zinc-900 dark:bg-gray-900 transition-opacity duration-500 ${isPlayerReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+              <p className="text-zinc-300 dark:text-gray-300 text-sm font-medium">Loading video player...</p>
+            </div>
+          </div>
+          
           <div className="absolute inset-0 pointer-events-none border border-zinc-700 rounded-lg"></div>
         </div>
       ) : (
