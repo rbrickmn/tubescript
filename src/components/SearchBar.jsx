@@ -1,5 +1,12 @@
 import { useState } from "react";
 import { extractVideoId } from '../utils/api';
+// Import CSS only if it exists, to avoid errors
+try {
+  require('./SearchBar.css');
+} catch (e) {
+  // CSS file might not exist, which is fine
+  console.log('SearchBar.css not found, continuing without it');
+}
 
 function SearchBar({ onSubmit, isLoading }) {
   const [url, setUrl] = useState("");

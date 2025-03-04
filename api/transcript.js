@@ -63,6 +63,14 @@ export default async function handler(req, res) {
         });
       }
       
+      // Check for network errors
+      if (transcriptError.message && transcriptError.message.includes('network')) {
+        return res.status(503).json({ 
+          success: false, 
+          message: 'Network error while fetching transcript. Please try again later.' 
+        });
+      }
+      
       return res.status(500).json({ 
         success: false, 
         message: `Transcript API error: ${transcriptError.message}` 

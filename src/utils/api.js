@@ -2,9 +2,10 @@
  * API utility functions for fetching transcript data
  */
 
-const API_BASE_URL = import.meta.env.PROD 
+// More robust API base URL detection
+const API_BASE_URL = (import.meta.env.PROD || window.location.hostname !== 'localhost')
   ? '/api' 
-  : 'https://tubescript-generator.vercel.app/api';
+  : 'http://localhost:3000/api';
 
 /**
  * Extract YouTube video ID from various URL formats
@@ -47,6 +48,8 @@ export async function fetchTranscript(videoId) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
     
+    console.log(`Fetching transcript from: ${API_BASE_URL}/transcript?videoId=${videoId}`);
+    
     const response = await fetch(`${API_BASE_URL}/transcript?videoId=${videoId}`, {
       signal: controller.signal
     });
@@ -57,6 +60,8 @@ export async function fetchTranscript(videoId) {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error(`API error: ${response.status} - ${data.message || 'Unknown error'}`);
+      
       // Handle specific error cases
       if (response.status === 404) {
         throw new Error(data.message || 'Transcript not found. The video may not have captions available.');
@@ -70,6 +75,7 @@ export async function fetchTranscript(videoId) {
     }
 
     if (!data.success) {
+      console.error(`API returned success: false - ${data.message || 'Unknown error'}`);
       throw new Error(data.message || 'Failed to fetch transcript');
     }
 
@@ -77,15 +83,18 @@ export async function fetchTranscript(videoId) {
   } catch (error) {
     // Handle specific error types
     if (error.name === 'AbortError') {
+      console.error('Request timed out:', error);
       throw new Error('Request timed out. The server might be experiencing high load or connectivity issues.');
     }
     
     // Check if it's a network error
     if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      console.error('Network error:', error);
       throw new Error('Network error. Please check your internet connection and try again.');
     }
     
     // Re-throw the error with the message we've already set
+    console.error('Fetch transcript error:', error);
     throw error;
   }
 } 
