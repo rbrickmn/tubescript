@@ -10,8 +10,10 @@ A beautiful, modern web application that allows users to paste a YouTube URL and
 - Clean, modern UI with a video player on the left and transcript on the right
 - Click on any line in the transcript to jump to that timestamp in the video
 - Dark mode support that automatically adapts to system preferences
-- Export transcript functionality to save the content as a text file
-- Copy transcript to clipboard with a single click
+- Export transcript functionality to save the content as TXT, CSV, or JSON formats
+- Copy transcript to clipboard with a single click and visual feedback
+- Robust error handling with helpful user feedback
+- API health checking to ensure service availability
 - Fully responsive design with optimized mobile experience
 - Mobile-friendly UI with space-saving icon-only buttons
 - Custom logo and branding
@@ -21,7 +23,7 @@ A beautiful, modern web application that allows users to paste a YouTube URL and
 - React 19
 - Vite
 - Tailwind CSS v4
-- Express.js (for the backend API)
+- Vercel Serverless Functions (for the backend API)
 - YouTube API (via react-youtube)
 - YouTube Transcript API
 
@@ -50,12 +52,7 @@ A beautiful, modern web application that allows users to paste a YouTube URL and
    npm run dev
    ```
 
-4. In a separate terminal, start the backend server:
-   ```
-   node server.js
-   ```
-
-5. Open your browser and navigate to:
+4. Open your browser and navigate to:
    ```
    http://localhost:5173
    ```
@@ -67,11 +64,44 @@ A beautiful, modern web application that allows users to paste a YouTube URL and
 3. The video will appear on the left side of the screen
 4. The transcript will appear on the right side with timestamps
 5. Click on any line in the transcript to jump to that point in the video
-6. Use the export button to download the transcript as a text file
+6. Use the export button to download the transcript in your preferred format (TXT, CSV, or JSON)
 7. Use the copy button to quickly copy the entire transcript to your clipboard
 8. The app automatically adapts to your system's light/dark mode preference
 
+## Error Handling
+
+The application includes comprehensive error handling:
+
+- **URL Validation**: Validates YouTube URLs and provides clear feedback for invalid inputs
+- **API Availability**: Checks API health on startup and provides warnings if the service is unavailable
+- **Transcript Not Found**: Provides detailed explanations when a transcript isn't available for a video
+- **Network Issues**: Detects and reports network connectivity problems
+- **Server Errors**: Gracefully handles server-side errors with user-friendly messages
+- **Retry Functionality**: Allows users to retry failed operations with a single click
+
 ## Deployment
+
+### Vercel Deployment (Recommended)
+
+This application is optimized for deployment on Vercel:
+
+1. Push your code to a GitHub repository
+2. Connect your repository to Vercel
+3. Vercel will automatically detect the Vite configuration
+4. The API endpoints will be handled by the serverless functions in the `/api` directory
+
+No additional configuration is needed as the project includes a `vercel.json` file that handles routing.
+
+### API Architecture
+
+The application uses Vercel Serverless Functions for the backend:
+
+- `/api/transcript.js`: Handles transcript fetching from YouTube videos
+- `/api/health.js`: Provides a health check endpoint for monitoring
+
+The frontend automatically detects whether it's running in development or production mode and adjusts API endpoints accordingly.
+
+### Manual Deployment
 
 To build the application for production:
 
@@ -89,11 +119,14 @@ npm run preview
 
 This will serve the production build locally for testing.
 
-### Backend Deployment
+## Troubleshooting
 
-The application requires a backend server to fetch YouTube transcripts. Make sure to deploy the Express server (`server.js`) alongside your frontend application.
+If you encounter issues with the application:
 
-For services like Vercel or Netlify, you may need to set up serverless functions to handle the backend API requests.
+1. **API Unavailable**: Check your internet connection and verify that the API endpoints are accessible
+2. **Transcript Not Found**: Not all YouTube videos have available transcripts. Try with videos that are known to have captions
+3. **Deployment Issues**: Ensure that the `vercel.json` configuration is properly set up for routing API requests
+4. **CORS Errors**: If deploying to a custom environment, ensure CORS headers are properly configured
 
 ## License
 
@@ -104,3 +137,4 @@ MIT
 - Thanks to the creators of the YouTube Transcript API
 - Tailwind CSS for the beautiful styling
 - React and Vite for the excellent development experience
+- Vercel for the seamless deployment experience

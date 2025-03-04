@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import YouTubePlayer from "./components/YouTubePlayer";
 import TranscriptViewer from "./components/TranscriptViewer";
 import SearchBar from "./components/SearchBar";
-import { fetchTranscript } from "./utils/api";
+import ErrorMessage from "./components/ErrorMessage";
+import { fetchTranscript, extractVideoId } from "./utils/api";
 import logo from "./assets/logo.svg";
 
 function App() {
@@ -10,39 +11,41 @@ function App() {
   const [transcript, setTranscript] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [errorType, setErrorType] = useState("");
   const [playerRef, setPlayerRef] = useState(null);
   const [isTranscriptReady, setIsTranscriptReady] = useState(false);
   const transcriptContainerRef = useRef(null);
   const videoContainerRef = useRef(null);
 
-  const handleVideoSubmit = async (url) => {
+  const handleVideoSubmit = async (videoId) => {
     try {
       setLoading(true);
       setError("");
+      setErrorType("");
       setIsTranscriptReady(false);
       
-      // Extract video ID from YouTube URL
-      const extractedVideoId = extractVideoId(url);
+      setVideoId(videoId);
       
-      if (!extractedVideoId) {
-        throw new Error("Invalid YouTube URL");
+      // Fetch transcript using our improved API utility
+      try {
+        const transcriptData = await fetchTranscript(videoId);
+        setTranscript(transcriptData);
+        
+        // Add a slight delay before showing the transcript for a smoother experience
+        setTimeout(() => {
+          setIsTranscriptReady(true);
+        }, 1200);
+      } catch (err) {
+        // Set specific error type for better error handling in the ErrorMessage component
+        if (err.message.includes('Transcript not found') || err.message.includes('No transcript found')) {
+          setErrorType('transcript_not_found');
+        } else if (err.message.includes('Network error') || err.message.includes('Failed to fetch')) {
+          setErrorType('api_error');
+        } else {
+          setErrorType('general_error');
+        }
+        throw err;
       }
-      
-      setVideoId(extractedVideoId);
-      
-      // Fetch transcript using our API utility
-      const result = await fetchTranscript(extractedVideoId);
-      
-      if (!result.success) {
-        throw new Error(result.error || "Failed to fetch transcript");
-      }
-      
-      setTranscript(result.transcript);
-      
-      // Add a slight delay before showing the transcript for a smoother experience
-      setTimeout(() => {
-        setIsTranscriptReady(true);
-      }, 1200);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -98,6 +101,7 @@ function App() {
               setVideoId("");
               setTranscript([]);
               setError("");
+              setErrorType("");
               setIsTranscriptReady(false);
             }}
             className="block cursor-pointer transition-transform hover:scale-[1.02] focus:outline-none"
@@ -118,13 +122,12 @@ function App() {
         </div>
         
         {error && (
-          <div className={`my-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 mx-auto ${videoId ? 'max-w-[90%]' : 'max-w-3xl'} transition-all duration-300`}>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
-              </svg>
-              {error}
-            </div>
+          <div className={`mx-auto ${videoId ? 'max-w-[90%]' : 'max-w-3xl'} transition-all duration-300`}>
+            <ErrorMessage 
+              message={error}
+              errorType={errorType}
+              onRetry={videoId ? () => handleVideoSubmit(videoId) : null} 
+            />
           </div>
         )}
         
@@ -176,13 +179,6 @@ function App() {
       </footer>
     </div>
   );
-}
-
-// Helper function to extract video ID from YouTube URL
-function extractVideoId(url) {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
 }
 
 export default App;

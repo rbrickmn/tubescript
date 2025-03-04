@@ -4,6 +4,7 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
   // Add state for dropdown and copy notification
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
+  const [copyStatus, setCopyStatus] = useState('idle'); // 'idle', 'success', 'error'
   
   // Format time from milliseconds to MM:SS format
   const formatTime = (timeInMilliseconds) => {
@@ -23,7 +24,7 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
       .replace(/&amp;/g, '&');
   };
 
-  // Copy transcript to clipboard
+  // Copy transcript to clipboard with improved error handling
   const copyToClipboard = () => {
     if (!transcript || transcript.length === 0) return;
     
@@ -31,14 +32,59 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
       `[${formatTime(item.start)}] ${cleanText(item.text)}`
     ).join('\n\n');
     
-    navigator.clipboard.writeText(formattedText)
-      .then(() => {
+    // Use the newer Clipboard API with fallback
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(formattedText)
+        .then(() => {
+          setCopyStatus('success');
+          setShowCopyNotification(true);
+          setTimeout(() => {
+            setShowCopyNotification(false);
+            setTimeout(() => setCopyStatus('idle'), 300); // Reset after fade out
+          }, 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy: ', err);
+          setCopyStatus('error');
+          setShowCopyNotification(true);
+          setTimeout(() => {
+            setShowCopyNotification(false);
+            setTimeout(() => setCopyStatus('idle'), 300);
+          }, 2000);
+        });
+    } else {
+      // Fallback for browsers that don't support clipboard API
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = formattedText;
+        textArea.style.position = 'fixed';  // Avoid scrolling to bottom
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        const successful = document.execCommand('copy');
+        if (successful) {
+          setCopyStatus('success');
+        } else {
+          setCopyStatus('error');
+        }
+        
+        document.body.removeChild(textArea);
         setShowCopyNotification(true);
-        setTimeout(() => setShowCopyNotification(false), 2000);
-      })
-      .catch(err => {
-        console.error('Failed to copy: ', err);
-      });
+        setTimeout(() => {
+          setShowCopyNotification(false);
+          setTimeout(() => setCopyStatus('idle'), 300);
+        }, 2000);
+      } catch (err) {
+        console.error('Fallback: Failed to copy', err);
+        setCopyStatus('error');
+        setShowCopyNotification(true);
+        setTimeout(() => {
+          setShowCopyNotification(false);
+          setTimeout(() => setCopyStatus('idle'), 300);
+        }, 2000);
+      }
+    }
   };
 
   // Export transcript as a file
@@ -106,8 +152,11 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => {
-      setShowExportOptions(false);
+    const handleClickOutside = (event) => {
+      // Only close if clicking outside the dropdown
+      if (showExportOptions && !event.target.closest('.export-dropdown')) {
+        setShowExportOptions(false);
+      }
     };
     
     if (showExportOptions) {
@@ -121,8 +170,8 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
 
   // Generate skeleton items for loading state
   const renderSkeletonItems = () => {
-    // Create a variable number of skeleton items based on transcript length
-    const itemCount = transcript.length > 0 ? Math.min(transcript.length, 12) : 8;
+    // Create a variable number of skeleton items based on transcript length or a default value
+    const itemCount = transcript && transcript.length > 0 ? Math.min(transcript.length, 12) : 8;
     
     return Array(itemCount).fill().map((_, index) => (
       <div key={`skeleton-${index}`} className="flex p-3">
@@ -185,7 +234,13 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
           {/* Copy button */}
           <button 
             onClick={copyToClipboard}
-            className="flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-100 ease-in-out text-sm font-medium cursor-pointer"
+            className={`flex items-center px-3 py-2 ${
+              copyStatus === 'success' 
+                ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' 
+                : copyStatus === 'error'
+                  ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            } rounded-lg transition-all duration-100 ease-in-out text-sm font-medium cursor-pointer`}
             title="Copy transcript to clipboard"
           >
             <svg className="w-4 h-4 mr-1 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -195,17 +250,34 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
           </button>
           
           {/* Copy notification */}
-          <div className={`fixed top-4 right-4 bg-green-100 dark:bg-green-900 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-2 rounded-lg shadow-lg transition-opacity duration-300 ${showCopyNotification ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className={`fixed top-4 right-4 ${
+            copyStatus === 'success' 
+              ? 'bg-green-100 dark:bg-green-900 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' 
+              : 'bg-red-100 dark:bg-red-900 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
+          } border px-4 py-2 rounded-lg shadow-lg transition-opacity duration-300 ${
+            showCopyNotification ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}>
             <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              Copied to clipboard!
+              {copyStatus === 'success' ? (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  Copied to clipboard!
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  Failed to copy to clipboard
+                </>
+              )}
             </div>
           </div>
           
           {/* Export button */}
-          <div className="relative">
+          <div className="relative export-dropdown">
             <button 
               onClick={(e) => {
                 e.stopPropagation();
@@ -266,7 +338,7 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
                         className="w-full text-left px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-800 dark:text-gray-200 text-sm transition-colors flex items-center group cursor-pointer"
                       >
                         <svg className="w-4 h-4 mr-2 text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                         </svg>
                         <span className="group-hover:translate-x-1 transition-transform duration-150">JSON (.json)</span>
                       </button>
@@ -278,31 +350,31 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
           </div>
         </div>
       </div>
-      <div className="overflow-y-auto flex-1 pr-2">
-        <div className="relative">
-          {/* Skeleton that fades out */}
-          <div className={`space-y-3 absolute inset-0 transition-opacity duration-300 ${isReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-            {renderSkeletonItems()}
-          </div>
-          
-          {/* Real content that fades in */}
-          <div className={`space-y-3 transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}>
-            {transcript.map((item, index) => (
-              <div 
-                key={`transcript-${index}`}
-                className="flex hover:bg-blue-50 dark:hover:bg-blue-900/30 p-3 rounded-lg transition-all duration-100 ease-in-out transform will-change-transform cursor-pointer group"
-                onClick={() => onTimeClick(item.start)}
+      
+      <div className="flex-1 overflow-y-auto pr-1 space-y-1">
+        {!isReady ? renderSkeletonItems() : (
+          transcript.map((item, index) => (
+            <div 
+              key={`${index}-${item.start}`}
+              className="flex p-3 hover:bg-zinc-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors cursor-pointer group"
+              onClick={() => onTimeClick(item.start)}
+            >
+              <button 
+                className="flex items-center justify-center px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded mr-3 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors group-hover:scale-105 transform duration-150 whitespace-nowrap"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTimeClick(item.start);
+                }}
               >
-                <div className="flex items-center justify-center w-20 h-8 bg-zinc-100 dark:bg-gray-700 text-zinc-500 dark:text-gray-400 rounded mr-3 group-hover:bg-blue-100 dark:group-hover:bg-blue-800 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-all duration-100 ease-in-out font-mono text-base shrink-0">
-                  {formatTime(item.start)}
-                </div>
-                <p className="text-zinc-800 dark:text-gray-200 group-hover:text-blue-800 dark:group-hover:text-blue-300 transition-all duration-100 ease-in-out text-lg">
-                  {cleanText(item.text)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 5v14l11-7z"></path>
+                </svg>
+                {formatTime(item.start)}
+              </button>
+              <p className="text-zinc-800 dark:text-gray-200 leading-relaxed">{cleanText(item.text)}</p>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

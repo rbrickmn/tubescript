@@ -1,31 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { extractVideoId } from '../utils/api';
 
 function SearchBar({ onSubmit, isLoading }) {
   const [url, setUrl] = useState("");
   const [isValidUrl, setIsValidUrl] = useState(true);
   const [validationMessage, setValidationMessage] = useState("");
 
-  // Validate URL when it changes
-  useEffect(() => {
-    if (!url.trim()) {
-      setIsValidUrl(true);
-      setValidationMessage("");
-      return;
-    }
-
-    // Simple YouTube URL validation
-    const youtubeRegex =
-      /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})(\S*)?$/;
-    const isValid = youtubeRegex.test(url);
-
-    setIsValidUrl(isValid);
-    setValidationMessage(isValid ? "" : "Please enter a valid YouTube URL");
-  }, [url]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (url.trim() && isValidUrl) {
-      onSubmit(url.trim());
+    
+    // Use the improved extractVideoId function
+    const videoId = extractVideoId(url);
+    
+    if (!videoId) {
+      setIsValidUrl(false);
+      setValidationMessage("Please enter a valid YouTube URL or video ID");
+      return;
+    }
+    
+    setIsValidUrl(true);
+    setValidationMessage("");
+    onSubmit(videoId);
+  };
+
+  // Clear validation errors when URL changes
+  const handleUrlChange = (e) => {
+    setUrl(e.target.value);
+    if (!e.target.value.trim()) {
+      setIsValidUrl(true);
+      setValidationMessage("");
     }
   };
 
@@ -45,7 +48,7 @@ function SearchBar({ onSubmit, isLoading }) {
           <input
             type="text"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={handleUrlChange}
             placeholder="Paste YouTube URL here (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
             className={`w-full pl-10 px-4 py-3 rounded-lg border ${
               !isValidUrl && url.trim()
@@ -63,7 +66,7 @@ function SearchBar({ onSubmit, isLoading }) {
         </div>
         <button
           type="submit"
-          disabled={isLoading || !url.trim() || !isValidUrl}
+          disabled={isLoading || !url.trim()}
           className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
         >
           {isLoading ? (
