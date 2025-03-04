@@ -106,7 +106,7 @@ function App() {
             <div className="flex flex-col items-center">
               <img src={logo} alt="YouTube Transcript Generator Logo" className="w-16 h-16 md:w-24 md:h-24 mb-2 md:mb-3 transition-transform hover:scale-105" />
               <h1 className="text-2xl md:text-4xl font-bold text-center mb-2 md:mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                YouTube Transcript Generator
+                Tubescript
               </h1>
             </div>
           </a>
@@ -156,7 +156,7 @@ function App() {
       <footer className="mt-auto pt-8 text-center text-zinc-500 dark:text-gray-400 text-sm">
         <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4 border-t border-zinc-200 dark:border-gray-700">
-            <p>© {new Date().getFullYear()} YouTube Transcript Generator</p>
+            <p>© {new Date().getFullYear()} Tubescript - YouTube Transcript Generator</p>
             <p className="mt-2 flex items-center justify-center">
               Created by{" "}
               <a 
