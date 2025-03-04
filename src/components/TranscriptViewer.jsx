@@ -24,11 +24,11 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
     
     return Array(itemCount).fill().map((_, index) => (
       <div key={`skeleton-${index}`} className="flex p-3">
-        <div className="flex items-center justify-center w-16 h-7 bg-zinc-200 animate-shimmer rounded mr-3 shrink-0"></div>
+        <div className="flex items-center justify-center w-20 h-8 bg-zinc-200 animate-shimmer rounded mr-3 shrink-0"></div>
         <div className="flex-1">
-          <div className="h-5 bg-zinc-200 animate-shimmer rounded w-full"></div>
+          <div className="h-6 bg-zinc-200 animate-shimmer rounded w-full"></div>
           {index % 2 === 0 && (
-            <div className="h-5 bg-zinc-200 animate-shimmer rounded w-3/4 mt-2"></div>
+            <div className="h-6 bg-zinc-200 animate-shimmer rounded w-3/4 mt-2"></div>
           )}
         </div>
       </div>
@@ -72,8 +72,8 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-2xl font-semibold mb-5 flex-shrink-0 flex items-center">
-        <svg className="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <h2 className="text-3xl font-semibold mb-5 flex-shrink-0 flex items-center">
+        <svg className="w-7 h-7 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
         Transcript
@@ -93,10 +93,10 @@ function TranscriptViewer({ transcript, onTimeClick, loading, isReady }) {
                 className="flex hover:bg-blue-50 p-3 rounded-lg transition-colors cursor-pointer group"
                 onClick={() => onTimeClick(item.start)}
               >
-                <div className="flex items-center justify-center w-16 h-7 bg-zinc-100 text-zinc-500 rounded mr-3 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors font-mono text-sm shrink-0">
+                <div className="flex items-center justify-center w-20 h-8 bg-zinc-100 text-zinc-500 rounded mr-3 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors font-mono text-base shrink-0">
                   {formatTime(item.start)}
                 </div>
-                <p className="text-zinc-800 group-hover:text-blue-800 transition-colors text-base">
+                <p className="text-zinc-800 group-hover:text-blue-800 transition-colors text-lg">
                   {cleanText(item.text)}
                 </p>
               </div>

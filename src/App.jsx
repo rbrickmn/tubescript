@@ -94,12 +94,12 @@ function App() {
           <p className="text-center text-zinc-600 max-w-2xl mx-auto">Paste a YouTube URL to generate a transcript with clickable timestamps</p>
         </header>
         
-        <div className="max-w-3xl mx-auto mb-10">
+        <div className={`mx-auto mb-10 ${videoId ? 'max-w-[90%]' : 'max-w-3xl'} transition-all duration-300`}>
           <SearchBar onSubmit={handleVideoSubmit} isLoading={loading} />
         </div>
         
         {error && (
-          <div className="my-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 max-w-3xl mx-auto">
+          <div className={`my-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mx-auto ${videoId ? 'max-w-[90%]' : 'max-w-3xl'} transition-all duration-300`}>
             <div className="flex items-center">
               <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
@@ -110,7 +110,7 @@ function App() {
         )}
         
         {videoId && (
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto animate-fadeIn">
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-[90%] mx-auto animate-fadeIn">
             <div 
               className="bg-white rounded-xl shadow-md p-5 border border-zinc-100" 
               ref={videoContainerRef}
@@ -134,7 +134,7 @@ function App() {
       </div>
       
       <footer className="mt-16 text-center text-zinc-500 text-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4 border-t border-zinc-200">
             <p>© {new Date().getFullYear()} YouTube Transcript Generator. All rights reserved.</p>
             <p className="mt-1">Made with ❤️ for content creators and learners.</p>

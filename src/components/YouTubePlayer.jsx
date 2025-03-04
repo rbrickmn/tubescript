@@ -28,7 +28,7 @@ function YouTubePlayer({ videoId, setPlayerRef }) {
   }, [videoId, setPlayerRef]);
 
   return (
-    <div className="aspect-video w-full rounded-lg overflow-hidden bg-zinc-900 shadow-inner">
+    <div className="aspect-video w-full rounded-lg overflow-hidden bg-zinc-900 shadow-inner" style={{ minHeight: '400px' }}>
       {videoId ? (
         <div className={`relative w-full h-full transition-opacity duration-300 ${isPlayerReady ? 'opacity-100' : 'opacity-0'}`}>
           <YouTube
