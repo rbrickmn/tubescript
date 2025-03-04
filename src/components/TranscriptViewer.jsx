@@ -35,9 +35,6 @@ function TranscriptViewer({ transcript, onTimeClick, loading }) {
     );
   }
 
-  console.log('Rendering transcript with', transcript.length, 'entries');
-  console.log('First entry:', transcript[0]);
-
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-xl font-semibold mb-4 flex-shrink-0">Transcript</h2>

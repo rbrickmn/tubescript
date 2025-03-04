@@ -10,7 +10,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [playerRef, setPlayerRef] = useState(null);
-  const [debug, setDebug] = useState(null); // For debugging purposes
   const transcriptContainerRef = useRef(null);
   const videoContainerRef = useRef(null);
 
@@ -18,7 +17,6 @@ function App() {
     try {
       setLoading(true);
       setError("");
-      setDebug(null);
       
       // Extract video ID from YouTube URL
       const extractedVideoId = extractVideoId(url);
@@ -27,19 +25,10 @@ function App() {
         throw new Error("Invalid YouTube URL");
       }
       
-      console.log("Extracted Video ID:", extractedVideoId);
       setVideoId(extractedVideoId);
       
       // Fetch transcript using our API utility
-      console.log("Fetching transcript for video ID:", extractedVideoId);
       const result = await fetchTranscript(extractedVideoId);
-      console.log("Transcript API response:", result);
-      
-      // Store debug info
-      setDebug({
-        videoId: extractedVideoId,
-        apiResponse: result
-      });
       
       if (!result.success) {
         throw new Error(result.error || "Failed to fetch transcript");
@@ -48,7 +37,6 @@ function App() {
       setTranscript(result.transcript);
     } catch (err) {
       setError(err.message);
-      console.error("Error:", err);
     } finally {
       setLoading(false);
     }
@@ -112,16 +100,6 @@ function App() {
                 loading={loading}
               />
             </div>
-          </div>
-        )}
-        
-        {/* Debug information - only visible during development */}
-        {debug && process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-            <h3 className="font-bold mb-2">Debug Info:</h3>
-            <pre className="text-xs overflow-auto max-h-[200px]">
-              {JSON.stringify(debug, null, 2)}
-            </pre>
           </div>
         )}
       </div>

@@ -56,6 +56,24 @@ A beautiful, cozy, and minimal web application that allows users to paste a YouT
 4. The transcript will appear on the right side with timestamps
 5. Click on any line in the transcript to jump to that point in the video
 
+## Deployment
+
+To build the application for production:
+
+```
+npm run build
+```
+
+This will create a production-ready build in the `dist` directory. You can then deploy this to your preferred hosting service.
+
+For a simple deployment, you can use:
+
+```
+npm run preview
+```
+
+This will serve the production build locally for testing.
+
 ## License
 
 MIT
