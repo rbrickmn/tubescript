@@ -90,7 +90,22 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-gray-900 dark:to-gray-800 text-zinc-900 dark:text-gray-100 p-4 md:p-8 flex flex-col">
       <div className="max-w-full mx-auto flex-grow px-4">
         <header className="mb-10">
-          <h1 className="text-4xl font-bold text-center mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">YouTube Transcript Generator</h1>
+          <a 
+            href="#" 
+            onClick={(e) => {
+              e.preventDefault();
+              setVideoId("");
+              setTranscript([]);
+              setError("");
+              setIsTranscriptReady(false);
+            }}
+            className="block cursor-pointer transition-transform hover:scale-[1.02] focus:outline-none"
+            title="Return to home"
+          >
+            <h1 className="text-4xl font-bold text-center mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+              YouTube Transcript Generator
+            </h1>
+          </a>
           <p className="text-center text-zinc-600 dark:text-gray-300 max-w-2xl mx-auto">Paste a YouTube URL to generate a transcript with clickable timestamps</p>
         </header>
         
