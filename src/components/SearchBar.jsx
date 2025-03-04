@@ -11,7 +11,7 @@ function SearchBar({ onSubmit, isLoading }) {
   };
 
   return (
-    <div className="bg-white p-5 rounded-xl shadow-md border border-zinc-100">
+    <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-zinc-100 dark:border-gray-700">
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -24,14 +24,14 @@ function SearchBar({ onSubmit, isLoading }) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Paste YouTube URL here (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
-            className="w-full pl-10 px-4 py-3 rounded-lg border border-zinc-200 bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+            className="w-full pl-10 px-4 py-3 rounded-lg border border-zinc-200 dark:border-gray-600 bg-zinc-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-600 transition-all dark:text-white dark:placeholder-gray-400"
             disabled={isLoading}
           />
         </div>
         <button
           type="submit"
           disabled={isLoading || !url.trim()}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
         >
           {isLoading ? (
             <span className="flex items-center justify-center">

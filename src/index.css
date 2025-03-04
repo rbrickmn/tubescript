@@ -6,7 +6,14 @@
   }
   
   body {
-    @apply antialiased;
+    @apply antialiased bg-white text-gray-900 transition-colors duration-200;
+  }
+
+  /* Dark mode styles */
+  @media (prefers-color-scheme: dark) {
+    body {
+      @apply bg-gray-900 text-gray-100;
+    }
   }
 }
 
@@ -17,6 +24,13 @@
   
   .btn-primary {
     @apply bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+
+  /* Dark mode component styles */
+  @media (prefers-color-scheme: dark) {
+    .btn-primary {
+      @apply focus:ring-blue-400 focus:ring-offset-gray-900;
+    }
   }
 }
 
@@ -99,5 +113,7 @@
     background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
     background-size: 800px 104px;
     animation: shimmer 1.5s infinite linear;
+    will-change: background-position;
+    transform: translateZ(0);
   }
 }
