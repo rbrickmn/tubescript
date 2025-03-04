@@ -1,13 +1,18 @@
 # YouTube Transcript Generator
 
-A beautiful, cozy, and minimal web application that allows users to paste a YouTube URL and view the video alongside its transcript. Users can click on specific lines in the transcript to jump to that exact moment in the video.
+A beautiful, modern web application that allows users to paste a YouTube URL and view the video alongside its transcript. Users can click on specific lines in the transcript to jump to that exact moment in the video.
+
+![YouTube Transcript Generator Logo](./src/assets/logo.svg)
 
 ## Features
 
 - Paste any YouTube URL to load the video and its transcript
-- Clean, minimal UI with a video player on the left and transcript on the right
+- Clean, modern UI with a video player on the left and transcript on the right
 - Click on any line in the transcript to jump to that timestamp in the video
+- Dark mode support that automatically adapts to system preferences
+- Export transcript functionality to save the content as a text file
 - Responsive design that works on both desktop and mobile devices
+- Custom logo and branding
 
 ## Technologies Used
 
@@ -43,9 +48,14 @@ A beautiful, cozy, and minimal web application that allows users to paste a YouT
    npm run dev
    ```
 
-4. Open your browser and navigate to:
+4. In a separate terminal, start the backend server:
    ```
-   http://localhost:3000
+   node server.js
+   ```
+
+5. Open your browser and navigate to:
+   ```
+   http://localhost:5173
    ```
 
 ## Usage
@@ -55,6 +65,8 @@ A beautiful, cozy, and minimal web application that allows users to paste a YouT
 3. The video will appear on the left side of the screen
 4. The transcript will appear on the right side with timestamps
 5. Click on any line in the transcript to jump to that point in the video
+6. Use the export button to download the transcript as a text file
+7. The app automatically adapts to your system's light/dark mode preference
 
 ## Deployment
 
@@ -73,6 +85,12 @@ npm run preview
 ```
 
 This will serve the production build locally for testing.
+
+### Backend Deployment
+
+The application requires a backend server to fetch YouTube transcripts. Make sure to deploy the Express server (`server.js`) alongside your frontend application.
+
+For services like Vercel or Netlify, you may need to set up serverless functions to handle the backend API requests.
 
 ## License
 

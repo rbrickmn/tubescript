@@ -3,6 +3,7 @@ import YouTubePlayer from "./components/YouTubePlayer";
 import TranscriptViewer from "./components/TranscriptViewer";
 import SearchBar from "./components/SearchBar";
 import { fetchTranscript } from "./utils/api";
+import logo from "./assets/logo.svg";
 
 function App() {
   const [videoId, setVideoId] = useState("");
@@ -102,9 +103,12 @@ function App() {
             className="block cursor-pointer transition-transform hover:scale-[1.02] focus:outline-none"
             title="Return to home"
           >
-            <h1 className="text-4xl font-bold text-center mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-              YouTube Transcript Generator
-            </h1>
+            <div className="flex flex-col items-center">
+              <img src={logo} alt="YouTube Transcript Generator Logo" className="w-24 h-24 mb-3 transition-transform hover:scale-105" />
+              <h1 className="text-4xl font-bold text-center mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                YouTube Transcript Generator
+              </h1>
+            </div>
           </a>
           <p className="text-center text-zinc-600 dark:text-gray-300 max-w-2xl mx-auto">Paste a YouTube URL to generate a transcript with clickable timestamps</p>
         </header>
