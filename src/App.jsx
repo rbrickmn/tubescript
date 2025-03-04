@@ -37,9 +37,15 @@ function App() {
         }, 1200);
       } catch (err) {
         // Set specific error type for better error handling in the ErrorMessage component
-        if (err.message.includes('Transcript not found') || err.message.includes('No transcript found')) {
+        if (err.message.includes('Transcript not found') || 
+            err.message.includes('No transcript found') ||
+            err.message.includes('disabled on this video') ||
+            err.message.includes('Transcripts are disabled')) {
           setErrorType('transcript_not_found');
-        } else if (err.message.includes('Network error') || err.message.includes('Failed to fetch')) {
+        } else if (err.message.includes('Network error') || 
+                  err.message.includes('Failed to fetch') ||
+                  err.message.includes('Server error') ||
+                  err.message.includes('service is currently experiencing issues')) {
           setErrorType('api_error');
         } else {
           setErrorType('general_error');
@@ -124,9 +130,9 @@ function App() {
         {error && (
           <div className={`mx-auto ${videoId ? 'max-w-[90%]' : 'max-w-3xl'} transition-all duration-300`}>
             <ErrorMessage 
-              message={error}
-              errorType={errorType}
-              onRetry={videoId ? () => handleVideoSubmit(videoId) : null} 
+              message={error} 
+              type={errorType}
+              onRetry={() => handleVideoSubmit(videoId)}
             />
           </div>
         )}

@@ -3,9 +3,18 @@
  */
 
 // More robust API base URL detection
-const API_BASE_URL = (import.meta.env.PROD || window.location.hostname !== 'localhost')
-  ? '/api' 
-  : 'http://localhost:3000/api';
+const API_BASE_URL = (() => {
+  // In development mode on localhost, use the full URL
+  if (import.meta.env.DEV && window.location.hostname === 'localhost') {
+    return 'http://localhost:3000/api';
+  }
+  
+  // In all other cases (Vercel, production, preview deployments), use relative path
+  // This works because the API is part of the same deployment
+  return '/api';
+})();
+
+console.log(`API base URL configured as: ${API_BASE_URL}`);
 
 /**
  * Extract YouTube video ID from various URL formats
@@ -46,40 +55,80 @@ export async function fetchTranscript(videoId) {
   try {
     // Add a timeout to the fetch request
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // Increase timeout to 30 seconds
     
-    console.log(`Fetching transcript from: ${API_BASE_URL}/transcript?videoId=${videoId}`);
+    const apiUrl = `${API_BASE_URL}/transcript?videoId=${videoId}`;
+    console.log(`Fetching transcript from: ${apiUrl}`);
+    console.log(`Current hostname: ${window.location.hostname}`);
+    console.log(`Environment: ${import.meta.env.MODE}`);
     
-    const response = await fetch(`${API_BASE_URL}/transcript?videoId=${videoId}`, {
-      signal: controller.signal
-    });
+    // Add retry logic
+    let retries = 0;
+    const maxRetries = 2;
+    let lastError = null;
     
-    // Clear the timeout
-    clearTimeout(timeoutId);
-    
-    const data = await response.json();
+    while (retries <= maxRetries) {
+      try {
+        if (retries > 0) {
+          console.log(`Retry attempt ${retries} for video ID: ${videoId}`);
+        }
+        
+        const response = await fetch(apiUrl, {
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        // Clear the timeout
+        clearTimeout(timeoutId);
+        
+        const data = await response.json();
 
-    if (!response.ok) {
-      console.error(`API error: ${response.status} - ${data.message || 'Unknown error'}`);
-      
-      // Handle specific error cases
-      if (response.status === 404) {
-        throw new Error(data.message || 'Transcript not found. The video may not have captions available.');
-      } else if (response.status === 429) {
-        throw new Error('Too many requests. Please try again later.');
-      } else if (response.status >= 500) {
-        throw new Error('Server error. Our transcript service is currently experiencing issues.');
-      } else {
-        throw new Error(data.message || 'Failed to fetch transcript');
+        if (!response.ok) {
+          console.error(`API error: ${response.status} - ${data.message || 'Unknown error'}`);
+          
+          // Handle specific error cases
+          if (response.status === 404) {
+            throw new Error(data.message || 'Transcript not found. The video may not have captions available.');
+          } else if (response.status === 429) {
+            throw new Error('Too many requests. Please try again later.');
+          } else if (response.status >= 500) {
+            throw new Error('Server error. Our transcript service is currently experiencing issues.');
+          } else {
+            throw new Error(data.message || 'Failed to fetch transcript');
+          }
+        }
+
+        if (!data.success) {
+          console.error(`API returned success: false - ${data.message || 'Unknown error'}`);
+          throw new Error(data.message || 'Failed to fetch transcript');
+        }
+
+        return data.transcript;
+      } catch (retryError) {
+        lastError = retryError;
+        
+        // Only retry on network errors or server errors
+        if (retryError.name === 'TypeError' || 
+            (retryError.message && retryError.message.includes('Server error'))) {
+          retries++;
+          
+          if (retries <= maxRetries) {
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+            continue;
+          }
+        } else {
+          // Don't retry on client errors
+          break;
+        }
       }
     }
-
-    if (!data.success) {
-      console.error(`API returned success: false - ${data.message || 'Unknown error'}`);
-      throw new Error(data.message || 'Failed to fetch transcript');
-    }
-
-    return data.transcript;
+    
+    // If we got here, all retries failed
+    throw lastError || new Error('Failed to fetch transcript after multiple attempts');
   } catch (error) {
     // Handle specific error types
     if (error.name === 'AbortError') {
