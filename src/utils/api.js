@@ -55,80 +55,46 @@ export async function fetchTranscript(videoId) {
   try {
     // Add a timeout to the fetch request
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // Increase timeout to 30 seconds
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // Reduce timeout to 15 seconds
     
     const apiUrl = `${API_BASE_URL}/transcript?videoId=${videoId}`;
     console.log(`Fetching transcript from: ${apiUrl}`);
-    console.log(`Current hostname: ${window.location.hostname}`);
-    console.log(`Environment: ${import.meta.env.MODE}`);
     
-    // Add retry logic
-    let retries = 0;
-    const maxRetries = 2;
-    let lastError = null;
+    // Single fetch attempt with proper error handling
+    const response = await fetch(apiUrl, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
     
-    while (retries <= maxRetries) {
-      try {
-        if (retries > 0) {
-          console.log(`Retry attempt ${retries} for video ID: ${videoId}`);
-        }
-        
-        const response = await fetch(apiUrl, {
-          signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        // Clear the timeout
-        clearTimeout(timeoutId);
-        
-        const data = await response.json();
+    // Clear the timeout
+    clearTimeout(timeoutId);
+    
+    const data = await response.json();
 
-        if (!response.ok) {
-          console.error(`API error: ${response.status} - ${data.message || 'Unknown error'}`);
-          
-          // Handle specific error cases
-          if (response.status === 404) {
-            throw new Error(data.message || 'Transcript not found. The video may not have captions available.');
-          } else if (response.status === 429) {
-            throw new Error('Too many requests. Please try again later.');
-          } else if (response.status >= 500) {
-            throw new Error('Server error. Our transcript service is currently experiencing issues.');
-          } else {
-            throw new Error(data.message || 'Failed to fetch transcript');
-          }
-        }
-
-        if (!data.success) {
-          console.error(`API returned success: false - ${data.message || 'Unknown error'}`);
-          throw new Error(data.message || 'Failed to fetch transcript');
-        }
-
-        return data.transcript;
-      } catch (retryError) {
-        lastError = retryError;
-        
-        // Only retry on network errors or server errors
-        if (retryError.name === 'TypeError' || 
-            (retryError.message && retryError.message.includes('Server error'))) {
-          retries++;
-          
-          if (retries <= maxRetries) {
-            // Wait before retrying (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
-            continue;
-          }
-        } else {
-          // Don't retry on client errors
-          break;
-        }
+    if (!response.ok) {
+      console.error(`API error: ${response.status} - ${data.message || 'Unknown error'}`);
+      
+      // Handle specific error cases
+      if (response.status === 404) {
+        throw new Error(data.message || 'Transcript not found. The video may not have captions available.');
+      } else if (response.status === 429) {
+        throw new Error('Too many requests. Please try again later.');
+      } else if (response.status >= 500) {
+        throw new Error('Server error. Our transcript service is currently experiencing issues.');
+      } else {
+        throw new Error(data.message || 'Failed to fetch transcript');
       }
     }
-    
-    // If we got here, all retries failed
-    throw lastError || new Error('Failed to fetch transcript after multiple attempts');
+
+    if (!data.success) {
+      console.error(`API returned success: false - ${data.message || 'Unknown error'}`);
+      throw new Error(data.message || 'Failed to fetch transcript');
+    }
+
+    return data.transcript;
   } catch (error) {
     // Handle specific error types
     if (error.name === 'AbortError') {

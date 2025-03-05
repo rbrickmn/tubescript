@@ -122,88 +122,59 @@ export default async function handler(req, res) {
     console.log(`Environment: ${process.env.NODE_ENV || 'unknown'}`);
     console.log(`Vercel environment: ${process.env.VERCEL_ENV || 'not on Vercel'}`);
 
-    let transcript = null;
-    let error = null;
+    // Set a timeout for the entire operation
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Operation timed out')), 8000);
+    });
 
-    // First try with the youtube-transcript package
+    // Try to fetch transcript with timeout
     try {
-      // Add more detailed logging
-      console.log(`Attempting to fetch transcript for video ID: ${videoId} using youtube-transcript package`);
-      
-      // Use the youtube-transcript package with explicit error handling
-      transcript = await YoutubeTranscript.fetchTranscript(videoId, {
-        lang: 'en',  // Try specifying language explicitly
-        country: 'US' // Try specifying country explicitly
+      const transcriptPromise = YoutubeTranscript.fetchTranscript(videoId, {
+        lang: 'en',
+        country: 'US'
       });
 
+      const transcript = await Promise.race([transcriptPromise, timeoutPromise]);
+
       if (!transcript || transcript.length === 0) {
-        console.log(`No transcript found for video ID: ${videoId}`);
         throw new Error('No transcript found for this video');
       }
 
-      // Format the transcript data to match our expected format
+      // Format the transcript data
       const formattedTranscript = transcript.map(item => ({
         text: item.text,
-        start: item.offset * 1000, // Convert from seconds to milliseconds
-        duration: item.duration * 1000 // Convert from seconds to milliseconds
+        start: item.offset * 1000,
+        duration: item.duration * 1000
       }));
 
-      console.log(`Successfully retrieved transcript for video ID: ${videoId} (${formattedTranscript.length} entries)`);
       return res.status(200).json({ success: true, transcript: formattedTranscript });
-    } catch (transcriptError) {
-      console.error(`Primary method failed for video ID ${videoId}:`, transcriptError);
-      console.error(`Error name: ${transcriptError.name}, Error message: ${transcriptError.message}`);
-      error = transcriptError;
+    } catch (error) {
+      console.error(`Primary method failed for video ID ${videoId}:`, error);
       
-      // Don't return an error yet, try the fallback method
-    }
-
-    // If the primary method failed, try the fallback method
-    if (!transcript) {
+      // Try fallback method with timeout
       try {
-        console.log(`Primary method failed, trying fallback method for video ID: ${videoId}`);
-        const fallbackTranscript = await fetchTranscriptFallback(videoId);
+        const fallbackPromise = fetchTranscriptFallback(videoId);
+        const fallbackTranscript = await Promise.race([fallbackPromise, timeoutPromise]);
         
         if (fallbackTranscript && fallbackTranscript.length > 0) {
-          console.log(`Fallback method succeeded for video ID: ${videoId} (${fallbackTranscript.length} entries)`);
           return res.status(200).json({ success: true, transcript: fallbackTranscript });
-        } else {
-          throw new Error('Fallback method returned empty transcript');
         }
       } catch (fallbackError) {
         console.error(`Fallback method failed for video ID ${videoId}:`, fallbackError);
-        
-        // If both methods failed, return the original error
-        if (error && error.message && error.message.includes('disabled on this video')) {
-          // This might be a false positive when deployed on Vercel
-          return res.status(503).json({ 
-            success: false, 
-            message: 'Unable to access video transcripts. This may be a temporary issue with our service.' 
-          });
-        }
-        
-        if (error && error.message && error.message.includes('Could not find any transcript')) {
-          return res.status(404).json({ 
-            success: false, 
-            message: 'No transcript found for this video. The video may not have captions available.' 
-          });
-        }
-        
-        // Generic error message
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Failed to fetch transcript using multiple methods. Please try again later.' 
-        });
       }
     }
+
+    // If we get here, both methods failed
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch transcript. The video might not have captions available or the service is temporarily unavailable.'
+    });
+
   } catch (error) {
     console.error('General error in transcript API:', error);
-    console.error(`Error name: ${error.name}, Error message: ${error.message}`);
-    console.error(`Error stack: ${error.stack}`);
-    
-    return res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Failed to fetch transcript' 
+    return res.status(500).json({
+      success: false,
+      message: 'An unexpected error occurred while fetching the transcript.'
     });
   }
 } 
