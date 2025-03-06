@@ -1,132 +1,86 @@
 # YouTube Transcript Generator
 
-A beautiful, modern web application that allows users to paste a YouTube URL and view the video alongside its transcript. Users can click on specific lines in the transcript to jump to that exact moment in the video.
-
-![YouTube Transcript Generator Logo](./src/assets/logo.svg)
+A serverless application that fetches and displays YouTube video transcripts. Built with React and deployed on Vercel.
 
 ## Features
 
-- Paste any YouTube URL to load the video and its transcript
-- Clean, modern UI with a video player on the left and transcript on the right
-- Click on any line in the transcript to jump to that timestamp in the video
-- Dark mode support that automatically adapts to system preferences
-- Export transcript functionality to save the content as TXT, CSV, or JSON formats
-- Copy transcript to clipboard with a single click and visual feedback
-- Robust error handling with helpful user feedback
-- API health checking to ensure service availability
-- Fully responsive design with optimized mobile experience
-- Mobile-friendly UI with space-saving icon-only buttons
-- Custom logo and branding
+- Extract transcripts from YouTube videos
+- Display transcripts with timestamps
+- Search within transcripts
+- Copy transcript to clipboard
+- Serverless architecture for easy deployment
 
-## Technologies Used
-
-- React 19
-- Vite
-- Tailwind CSS v4
-- Vercel Serverless Functions (for the backend API)
-- YouTube API (via react-youtube)
-- YouTube Transcript API
-
-## Getting Started
+## Development
 
 ### Prerequisites
 
-- Node.js (v18 or higher recommended)
-- npm or yarn
+- Node.js 18+ and npm
 
-### Installation
+### Setup
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/youtube-transcript-generator.git
-   cd youtube-transcript-generator
-   ```
-
+1. Clone the repository
 2. Install dependencies:
-   ```
-   npm install
-   ```
+
+```bash
+npm install
+```
 
 3. Start the development server:
-   ```
-   npm run dev
-   ```
 
-4. Open your browser and navigate to:
-   ```
-   http://localhost:5173
-   ```
+```bash
+npm run dev
+```
 
-## Usage
+This will start a development server that:
+- Serves the React frontend
+- Handles API requests through the serverless functions in the `api` directory
 
-1. Paste a YouTube URL in the input field (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)
-2. Click "Generate Transcript"
-3. The video will appear on the left side of the screen
-4. The transcript will appear on the right side with timestamps
-5. Click on any line in the transcript to jump to that point in the video
-6. Use the export button to download the transcript in your preferred format (TXT, CSV, or JSON)
-7. Use the copy button to quickly copy the entire transcript to your clipboard
-8. The app automatically adapts to your system's light/dark mode preference
+### Development Scripts
 
-## Error Handling
-
-The application includes comprehensive error handling:
-
-- **URL Validation**: Validates YouTube URLs and provides clear feedback for invalid inputs
-- **API Availability**: Checks API health on startup and provides warnings if the service is unavailable
-- **Transcript Not Found**: Provides detailed explanations when a transcript isn't available for a video
-- **Network Issues**: Detects and reports network connectivity problems
-- **Server Errors**: Gracefully handles server-side errors with user-friendly messages
-- **Retry Functionality**: Allows users to retry failed operations with a single click
+- `npm run dev` - Start the development server with API support
+- `npm run dev:vite` - Start only the Vite development server (frontend only)
+- `npm run build` - Build the project for production
+- `npm run preview` - Preview the production build locally
+- `npm run lint` - Run ESLint
 
 ## Deployment
 
-### Vercel Deployment (Recommended)
+This project is designed to be deployed on Vercel. The `vercel.json` file contains the necessary configuration.
 
-This application is optimized for deployment on Vercel:
+### Deploy to Vercel
 
-1. Push your code to a GitHub repository
-2. Connect your repository to Vercel
-3. Vercel will automatically detect the Vite configuration
-4. The API endpoints will be handled by the serverless functions in the `/api` directory
+1. Push your code to a Git repository
+2. Connect the repository to Vercel
+3. Vercel will automatically detect the configuration and deploy the project
 
-No additional configuration is needed as the project includes a `vercel.json` file that handles routing.
+## Project Structure
 
-### API Architecture
+- `/api` - Serverless API functions
+  - `transcript.js` - Fetches YouTube transcripts
+  - `health.js` - Health check endpoint
+- `/src` - Frontend React application
+  - `/components` - React components
+  - `/utils` - Utility functions
+  - `App.jsx` - Main application component
+  - `main.jsx` - Application entry point
 
-The application uses Vercel Serverless Functions for the backend:
+## How It Works
 
-- `/api/transcript.js`: Handles transcript fetching from YouTube videos
-- `/api/health.js`: Provides a health check endpoint for monitoring
-
-The frontend automatically detects whether it's running in development or production mode and adjusts API endpoints accordingly.
-
-### Manual Deployment
-
-To build the application for production:
-
-```
-npm run build
-```
-
-This will create a production-ready build in the `dist` directory. You can then deploy this to your preferred hosting service.
-
-For a simple deployment, you can use:
-
-```
-npm run preview
-```
-
-This will serve the production build locally for testing.
+1. The frontend makes requests to the `/api/transcript` endpoint with a YouTube video ID
+2. The serverless function fetches the transcript using multiple methods:
+   - First tries the `youtube-transcript` package
+   - Falls back to `youtube-transcript-api` if the first method fails
+   - Has a custom fallback implementation as a last resort
+3. The transcript is returned to the frontend and displayed to the user
 
 ## Troubleshooting
 
-If you encounter issues with the application:
+If you encounter issues with the transcript API:
 
-1. **API Unavailable**: Check your internet connection and verify that the API endpoints are accessible
-2. **Transcript Not Found**: Not all YouTube videos have available transcripts. Try with videos that are known to have captions
-3. **Deployment Issues**: Ensure that the `vercel.json` configuration is properly set up for routing API requests
-4. **CORS Errors**: If deploying to a custom environment, ensure CORS headers are properly configured
+1. Check that the video has captions available
+2. Verify that the video ID is correct
+3. Check the browser console and network tab for errors
+4. Check the Vercel function logs for server-side errors
 
 ## License
 
