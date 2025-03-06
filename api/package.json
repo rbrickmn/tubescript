@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "API for YouTube Transcript Generator",
   "main": "transcript.js",
+  "type": "module",
   "dependencies": {
     "youtube-transcript": "^1.0.6",
     "node-fetch": "^3.3.2"

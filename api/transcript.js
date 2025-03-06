@@ -1,16 +1,42 @@
 import { YoutubeTranscript } from 'youtube-transcript';
-import fetch from 'node-fetch';
+let fetch;
+
+// Add this near the top of the file after imports
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+];
+
+// Function to get a random user agent
+function getRandomUserAgent() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+// Function to initialize fetch
+async function initializeFetch() {
+  if (!fetch) {
+    const module = await import('node-fetch');
+    fetch = module.default;
+  }
+  return fetch;
+}
 
 // Fallback function to get transcript if the youtube-transcript package fails
 async function fetchTranscriptFallback(videoId) {
   console.log(`Attempting fallback transcript fetch for video ID: ${videoId}`);
   
   try {
+    // Initialize fetch
+    const fetchFn = await initializeFetch();
+    
     // First, get the video page to extract necessary tokens
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const videoPageResponse = await fetch(videoUrl, {
+    const videoPageResponse = await fetchFn(videoUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': getRandomUserAgent(),
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.youtube.com/'
       }
     });
     
@@ -52,9 +78,11 @@ async function fetchTranscriptFallback(videoId) {
     console.log(`Fetching captions from URL: ${captionUrl}`);
     
     // Fetch the actual transcript data
-    const transcriptResponse = await fetch(captionUrl, {
+    const transcriptResponse = await fetchFn(captionUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': getRandomUserAgent(),
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.youtube.com/'
       }
     });
     
@@ -117,10 +145,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'Video ID is required' });
     }
 
-    // Log the request for debugging
+    // Enhanced logging
     console.log(`Processing transcript request for video ID: ${videoId}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'unknown'}`);
     console.log(`Vercel environment: ${process.env.VERCEL_ENV || 'not on Vercel'}`);
+    console.log(`Node.js version: ${process.version}`);
+    console.log(`Request headers:`, JSON.stringify(req.headers || {}));
+    console.log(`Available environment variables: ${Object.keys(process.env).join(', ')}`);
 
     let transcript = null;
     let error = null;
@@ -130,10 +161,15 @@ export default async function handler(req, res) {
       // Add more detailed logging
       console.log(`Attempting to fetch transcript for video ID: ${videoId} using youtube-transcript package`);
       
-      // Use the youtube-transcript package with explicit error handling
+      // Use the youtube-transcript package with enhanced options
       transcript = await YoutubeTranscript.fetchTranscript(videoId, {
         lang: 'en',  // Try specifying language explicitly
-        country: 'US' // Try specifying country explicitly
+        country: 'US', // Try specifying country explicitly
+        headers: {
+          'User-Agent': getRandomUserAgent(),
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': 'https://www.youtube.com/'
+        }
       });
 
       if (!transcript || transcript.length === 0) {
