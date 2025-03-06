@@ -1,54 +1,16 @@
 import { YoutubeTranscript } from 'youtube-transcript';
-// Add import for youtube-transcript-api
-let ytTranscriptApi;
-
-// Add this near the top of the file after imports
-const USER_AGENTS = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-];
-
-// Function to get a random user agent
-function getRandomUserAgent() {
-  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-}
-
-// Function to initialize youtube-transcript-api
-async function initializeYtTranscriptApi() {
-  if (!ytTranscriptApi) {
-    const module = await import('youtube-transcript-api');
-    ytTranscriptApi = module.default;
-  }
-  return ytTranscriptApi;
-}
-
-let fetch;
-
-// Function to initialize fetch
-async function initializeFetch() {
-  if (!fetch) {
-    const module = await import('node-fetch');
-    fetch = module.default;
-  }
-  return fetch;
-}
+import fetch from 'node-fetch';
 
 // Fallback function to get transcript if the youtube-transcript package fails
 async function fetchTranscriptFallback(videoId) {
   console.log(`Attempting fallback transcript fetch for video ID: ${videoId}`);
   
   try {
-    // Initialize fetch
-    const fetchFn = await initializeFetch();
-    
     // First, get the video page to extract necessary tokens
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const videoPageResponse = await fetchFn(videoUrl, {
+    const videoPageResponse = await fetch(videoUrl, {
       headers: {
-        'User-Agent': getRandomUserAgent(),
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.youtube.com/'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
     });
     
@@ -90,11 +52,9 @@ async function fetchTranscriptFallback(videoId) {
     console.log(`Fetching captions from URL: ${captionUrl}`);
     
     // Fetch the actual transcript data
-    const transcriptResponse = await fetchFn(captionUrl, {
+    const transcriptResponse = await fetch(captionUrl, {
       headers: {
-        'User-Agent': getRandomUserAgent(),
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.youtube.com/'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
     });
     
@@ -157,13 +117,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'Video ID is required' });
     }
 
-    // Enhanced logging
+    // Log the request for debugging
     console.log(`Processing transcript request for video ID: ${videoId}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'unknown'}`);
     console.log(`Vercel environment: ${process.env.VERCEL_ENV || 'not on Vercel'}`);
-    console.log(`Node.js version: ${process.version}`);
-    console.log(`Request headers:`, JSON.stringify(req.headers || {}));
-    console.log(`Available environment variables: ${Object.keys(process.env).join(', ')}`);
 
     let transcript = null;
     let error = null;
@@ -173,15 +130,10 @@ export default async function handler(req, res) {
       // Add more detailed logging
       console.log(`Attempting to fetch transcript for video ID: ${videoId} using youtube-transcript package`);
       
-      // Use the youtube-transcript package with enhanced options
+      // Use the youtube-transcript package with explicit error handling
       transcript = await YoutubeTranscript.fetchTranscript(videoId, {
         lang: 'en',  // Try specifying language explicitly
-        country: 'US', // Try specifying country explicitly
-        headers: {
-          'User-Agent': getRandomUserAgent(),
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Referer': 'https://www.youtube.com/'
-        }
+        country: 'US' // Try specifying country explicitly
       });
 
       if (!transcript || transcript.length === 0) {
@@ -203,75 +155,45 @@ export default async function handler(req, res) {
       console.error(`Error name: ${transcriptError.name}, Error message: ${transcriptError.message}`);
       error = transcriptError;
       
-      // Don't return an error yet, try the alternative method
+      // Don't return an error yet, try the fallback method
     }
 
-    // If the primary method failed, try the youtube-transcript-api method
+    // If the primary method failed, try the fallback method
     if (!transcript) {
       try {
-        console.log(`Primary method failed, trying youtube-transcript-api for video ID: ${videoId}`);
+        console.log(`Primary method failed, trying fallback method for video ID: ${videoId}`);
+        const fallbackTranscript = await fetchTranscriptFallback(videoId);
         
-        // Initialize youtube-transcript-api
-        const api = await initializeYtTranscriptApi();
-        
-        // Try to get transcript using youtube-transcript-api
-        const apiTranscript = await api.getSubtitles({
-          videoID: videoId,
-          lang: 'en'
-        });
-        
-        if (apiTranscript && apiTranscript.length > 0) {
-          // Format the transcript data to match our expected format
-          const formattedTranscript = apiTranscript.map(item => ({
-            text: item.text,
-            start: item.start * 1000, // Convert to milliseconds if needed
-            duration: (item.duration || 2) * 1000 // Use default duration if not provided
-          }));
-          
-          console.log(`youtube-transcript-api method succeeded for video ID: ${videoId} (${formattedTranscript.length} entries)`);
-          return res.status(200).json({ success: true, transcript: formattedTranscript });
+        if (fallbackTranscript && fallbackTranscript.length > 0) {
+          console.log(`Fallback method succeeded for video ID: ${videoId} (${fallbackTranscript.length} entries)`);
+          return res.status(200).json({ success: true, transcript: fallbackTranscript });
         } else {
-          throw new Error('youtube-transcript-api returned empty transcript');
+          throw new Error('Fallback method returned empty transcript');
         }
-      } catch (apiError) {
-        console.error(`youtube-transcript-api method failed for video ID ${videoId}:`, apiError);
+      } catch (fallbackError) {
+        console.error(`Fallback method failed for video ID ${videoId}:`, fallbackError);
         
-        // If both methods failed, try the fallback method
-        try {
-          console.log(`Both primary methods failed, trying fallback method for video ID: ${videoId}`);
-          const fallbackTranscript = await fetchTranscriptFallback(videoId);
-          
-          if (fallbackTranscript && fallbackTranscript.length > 0) {
-            console.log(`Fallback method succeeded for video ID: ${videoId} (${fallbackTranscript.length} entries)`);
-            return res.status(200).json({ success: true, transcript: fallbackTranscript });
-          } else {
-            throw new Error('Fallback method returned empty transcript');
-          }
-        } catch (fallbackError) {
-          console.error(`Fallback method failed for video ID ${videoId}:`, fallbackError);
-          
-          // If all methods failed, return the original error
-          if (error && error.message && error.message.includes('disabled on this video')) {
-            // This might be a false positive when deployed on Vercel
-            return res.status(503).json({ 
-              success: false, 
-              message: 'Unable to access video transcripts. This may be a temporary issue with our service.' 
-            });
-          }
-          
-          if (error && error.message && error.message.includes('Could not find any transcript')) {
-            return res.status(404).json({ 
-              success: false, 
-              message: 'No transcript found for this video. The video may not have captions available.' 
-            });
-          }
-          
-          // Generic error message
-          return res.status(500).json({ 
+        // If both methods failed, return the original error
+        if (error && error.message && error.message.includes('disabled on this video')) {
+          // This might be a false positive when deployed on Vercel
+          return res.status(503).json({ 
             success: false, 
-            message: 'Failed to fetch transcript using multiple methods. Please try again later.' 
+            message: 'Unable to access video transcripts. This may be a temporary issue with our service.' 
           });
         }
+        
+        if (error && error.message && error.message.includes('Could not find any transcript')) {
+          return res.status(404).json({ 
+            success: false, 
+            message: 'No transcript found for this video. The video may not have captions available.' 
+          });
+        }
+        
+        // Generic error message
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Failed to fetch transcript using multiple methods. Please try again later.' 
+        });
       }
     }
   } catch (error) {
