@@ -1,16 +1,47 @@
-import { YoutubeTranscript } from 'youtube-transcript';
-import fetch from 'node-fetch';
+// Use dynamic import for dependencies in serverless environment
+let youtubeTranscriptModule;
+let fetchModule;
+
+// This pattern allows for both ESM and CJS environments
+async function getYoutubeTranscript() {
+  if (!youtubeTranscriptModule) {
+    try {
+      // Try ESM import first
+      youtubeTranscriptModule = await import('youtube-transcript');
+    } catch (error) {
+      // Fallback to CommonJS require
+      youtubeTranscriptModule = { YoutubeTranscript: require('youtube-transcript').YoutubeTranscript };
+    }
+  }
+  return youtubeTranscriptModule.YoutubeTranscript;
+}
+
+async function getFetch() {
+  if (!fetchModule) {
+    try {
+      // Try ESM import first
+      fetchModule = await import('node-fetch');
+    } catch (error) {
+      // Fallback to CommonJS require
+      fetchModule = { default: require('node-fetch') };
+    }
+  }
+  return fetchModule.default;
+}
+
+// Helper function to detect if we're running on Vercel
+function isRunningOnVercel() {
+  return Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.VERCEL_URL);
+}
 
 // Helper function to use our proxy instead of direct YouTube fetch
 async function proxyFetch(url) {
-  // In Vercel environment, use the YouTube proxy
-  const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+  const fetch = await getFetch();
   
-  if (isVercel) {
-    // Determine the base URL based on environment variables
-    // This assumes the proxy is at the same host, since both are deployed together
-    const baseUrl = `https://${process.env.VERCEL_URL || 'localhost:3000'}`;
-    const proxyUrl = `${baseUrl}/api/youtube-proxy?url=${encodeURIComponent(url)}`;
+  // In Vercel environment, use the YouTube proxy
+  if (isRunningOnVercel()) {
+    // For Vercel, use relative URL to avoid issues with domains
+    const proxyUrl = `/api/youtube-proxy?url=${encodeURIComponent(url)}`;
     
     console.log(`Using proxy for YouTube request: ${proxyUrl}`);
     return fetch(proxyUrl);
@@ -109,13 +140,12 @@ async function fetchTranscriptFallback(videoId) {
 async function fetchTranscriptWithProxy(videoId) {
   // In a Vercel environment, we need to modify the internals of the package
   // to use our proxy instead of direct YouTube requests
-  const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
-  
-  if (isVercel) {
+  if (isRunningOnVercel()) {
     // Use the fallback method directly since it's already using our proxy
     return fetchTranscriptFallback(videoId);
   } else {
     // In development, use the package normally
+    const YoutubeTranscript = await getYoutubeTranscript();
     return YoutubeTranscript.fetchTranscript(videoId, {
       lang: 'en',
       country: 'US'
@@ -155,6 +185,7 @@ export default async function handler(req, res) {
     console.log(`Processing transcript request for video ID: ${videoId}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'unknown'}`);
     console.log(`Vercel environment: ${process.env.VERCEL_ENV || 'not on Vercel'}`);
+    console.log(`Running on Vercel: ${isRunningOnVercel()}`);
 
     let transcript = null;
     let error = null;

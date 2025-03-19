@@ -1,8 +1,19 @@
-import fetch from 'node-fetch';
+// Use dynamic import for node-fetch in serverless environment
+let fetchModule;
 
-// Cache to store responses and reduce repeated calls to YouTube
-const CACHE = new Map();
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+// This pattern allows for both ESM and CJS environments
+async function getFetch() {
+  if (!fetchModule) {
+    try {
+      // Try ESM import first (this is how it would work in newer Node versions)
+      fetchModule = await import('node-fetch');
+    } catch (error) {
+      // Fallback to CommonJS require (for older Node versions or certain environments)
+      fetchModule = { default: require('node-fetch') };
+    }
+  }
+  return fetchModule.default;
+}
 
 /**
  * Serverless function to proxy YouTube requests
@@ -44,22 +55,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'Only YouTube URLs are supported' });
     }
 
-    // Check cache first
-    const cacheKey = decodedUrl;
-    const cachedResponse = CACHE.get(cacheKey);
-    
-    if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_DURATION) {
-      console.log(`[YouTube Proxy] Cache hit for: ${decodedUrl}`);
-      
-      // Set content type based on the cached response
-      if (cachedResponse.contentType) {
-        res.setHeader('Content-Type', cachedResponse.contentType);
-      }
-      
-      return res.status(200).send(cachedResponse.data);
-    }
-
     console.log(`[YouTube Proxy] Fetching: ${decodedUrl}`);
+    
+    // Get the fetch function
+    const fetch = await getFetch();
     
     // Use a more browser-like user agent to avoid being blocked
     const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
@@ -87,27 +86,17 @@ export default async function handler(req, res) {
     const contentType = response.headers.get('content-type');
     
     // Handle different response types
-    let responseData;
     if (contentType && contentType.includes('application/json')) {
-      responseData = await response.json();
+      const responseData = await response.json();
       
-      // Cache the response
-      CACHE.set(cacheKey, {
-        data: responseData,
-        contentType,
-        timestamp: Date.now()
-      });
+      // Set the same content type as the original response
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
       
       return res.status(200).json(responseData);
     } else {
-      responseData = await response.text();
-      
-      // Cache the response
-      CACHE.set(cacheKey, {
-        data: responseData,
-        contentType,
-        timestamp: Date.now()
-      });
+      const responseData = await response.text();
       
       // Set the same content type as the original response
       if (contentType) {
