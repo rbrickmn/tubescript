@@ -1,6 +1,30 @@
 import { YoutubeTranscript } from 'youtube-transcript';
 import fetch from 'node-fetch';
 
+// Helper function to use our proxy instead of direct YouTube fetch
+async function proxyFetch(url) {
+  // In Vercel environment, use the YouTube proxy
+  const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+  
+  if (isVercel) {
+    // Determine the base URL based on environment variables
+    // This assumes the proxy is at the same host, since both are deployed together
+    const baseUrl = `https://${process.env.VERCEL_URL || 'localhost:3000'}`;
+    const proxyUrl = `${baseUrl}/api/youtube-proxy?url=${encodeURIComponent(url)}`;
+    
+    console.log(`Using proxy for YouTube request: ${proxyUrl}`);
+    return fetch(proxyUrl);
+  } else {
+    // In development, fetch directly
+    console.log(`Direct fetch in development: ${url}`);
+    return fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+  }
+}
+
 // Fallback function to get transcript if the youtube-transcript package fails
 async function fetchTranscriptFallback(videoId) {
   console.log(`Attempting fallback transcript fetch for video ID: ${videoId}`);
@@ -8,11 +32,7 @@ async function fetchTranscriptFallback(videoId) {
   try {
     // First, get the video page to extract necessary tokens
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const videoPageResponse = await fetch(videoUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
+    const videoPageResponse = await proxyFetch(videoUrl);
     
     if (!videoPageResponse.ok) {
       throw new Error(`Failed to fetch video page: ${videoPageResponse.status}`);
@@ -51,12 +71,8 @@ async function fetchTranscriptFallback(videoId) {
     
     console.log(`Fetching captions from URL: ${captionUrl}`);
     
-    // Fetch the actual transcript data
-    const transcriptResponse = await fetch(captionUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
+    // Fetch the actual transcript data using our proxy
+    const transcriptResponse = await proxyFetch(captionUrl);
     
     if (!transcriptResponse.ok) {
       throw new Error(`Failed to fetch transcript data: ${transcriptResponse.status}`);
@@ -86,6 +102,24 @@ async function fetchTranscriptFallback(videoId) {
   } catch (error) {
     console.error('Fallback transcript fetch error:', error);
     throw error;
+  }
+}
+
+// Custom wrapper for the YoutubeTranscript package that uses our proxy
+async function fetchTranscriptWithProxy(videoId) {
+  // In a Vercel environment, we need to modify the internals of the package
+  // to use our proxy instead of direct YouTube requests
+  const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+  
+  if (isVercel) {
+    // Use the fallback method directly since it's already using our proxy
+    return fetchTranscriptFallback(videoId);
+  } else {
+    // In development, use the package normally
+    return YoutubeTranscript.fetchTranscript(videoId, {
+      lang: 'en',
+      country: 'US'
+    });
   }
 }
 
@@ -125,16 +159,13 @@ export default async function handler(req, res) {
     let transcript = null;
     let error = null;
 
-    // First try with the youtube-transcript package
+    // First try with the youtube-transcript package or our proxy wrapper
     try {
       // Add more detailed logging
-      console.log(`Attempting to fetch transcript for video ID: ${videoId} using youtube-transcript package`);
+      console.log(`Attempting to fetch transcript for video ID: ${videoId}`);
       
-      // Use the youtube-transcript package with explicit error handling
-      transcript = await YoutubeTranscript.fetchTranscript(videoId, {
-        lang: 'en',  // Try specifying language explicitly
-        country: 'US' // Try specifying country explicitly
-      });
+      // Use our custom wrapper function
+      transcript = await fetchTranscriptWithProxy(videoId);
 
       if (!transcript || transcript.length === 0) {
         console.log(`No transcript found for video ID: ${videoId}`);
@@ -144,8 +175,8 @@ export default async function handler(req, res) {
       // Format the transcript data to match our expected format
       const formattedTranscript = transcript.map(item => ({
         text: item.text,
-        start: item.offset * 1000, // Convert from seconds to milliseconds
-        duration: item.duration * 1000 // Convert from seconds to milliseconds
+        start: item.offset ? item.offset * 1000 : item.start, // Convert from seconds to milliseconds if needed
+        duration: item.duration ? item.duration * 1000 : item.duration // Convert from seconds to milliseconds if needed
       }));
 
       console.log(`Successfully retrieved transcript for video ID: ${videoId} (${formattedTranscript.length} entries)`);

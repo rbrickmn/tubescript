@@ -3,6 +3,7 @@
   "rewrites": [
     { "source": "/api/transcript", "destination": "/api/transcript.js" },
     { "source": "/api/health", "destination": "/api/health.js" },
+    { "source": "/api/youtube-proxy", "destination": "/api/youtube-proxy.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
