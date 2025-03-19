@@ -2,13 +2,12 @@
   "name": "youtube-transcript-generator-api",
   "version": "1.0.0",
   "description": "API for YouTube Transcript Generator",
-  "type": "module",
   "main": "transcript.js",
   "engines": {
     "node": ">=14.x"
   },
   "dependencies": {
     "youtube-transcript": "^1.0.6",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^2.6.7"
   }
 } 

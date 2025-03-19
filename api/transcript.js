@@ -1,33 +1,6 @@
-// Use dynamic import for dependencies in serverless environment
-let youtubeTranscriptModule;
-let fetchModule;
-
-// This pattern allows for both ESM and CJS environments
-async function getYoutubeTranscript() {
-  if (!youtubeTranscriptModule) {
-    try {
-      // Try ESM import first
-      youtubeTranscriptModule = await import('youtube-transcript');
-    } catch (error) {
-      // Fallback to CommonJS require
-      youtubeTranscriptModule = { YoutubeTranscript: require('youtube-transcript').YoutubeTranscript };
-    }
-  }
-  return youtubeTranscriptModule.YoutubeTranscript;
-}
-
-async function getFetch() {
-  if (!fetchModule) {
-    try {
-      // Try ESM import first
-      fetchModule = await import('node-fetch');
-    } catch (error) {
-      // Fallback to CommonJS require
-      fetchModule = { default: require('node-fetch') };
-    }
-  }
-  return fetchModule.default;
-}
+// CommonJS style require - more compatible with Vercel
+const { YoutubeTranscript } = require('youtube-transcript');
+const fetch = require('node-fetch');
 
 // Helper function to detect if we're running on Vercel
 function isRunningOnVercel() {
@@ -36,11 +9,10 @@ function isRunningOnVercel() {
 
 // Helper function to use our proxy instead of direct YouTube fetch
 async function proxyFetch(url) {
-  const fetch = await getFetch();
-  
   // In Vercel environment, use the YouTube proxy
   if (isRunningOnVercel()) {
     // For Vercel, use relative URL to avoid issues with domains
+    // Using just a relative path for simplicity and reliability
     const proxyUrl = `/api/youtube-proxy?url=${encodeURIComponent(url)}`;
     
     console.log(`Using proxy for YouTube request: ${proxyUrl}`);
@@ -145,7 +117,6 @@ async function fetchTranscriptWithProxy(videoId) {
     return fetchTranscriptFallback(videoId);
   } else {
     // In development, use the package normally
-    const YoutubeTranscript = await getYoutubeTranscript();
     return YoutubeTranscript.fetchTranscript(videoId, {
       lang: 'en',
       country: 'US'
@@ -153,7 +124,7 @@ async function fetchTranscriptWithProxy(videoId) {
   }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');

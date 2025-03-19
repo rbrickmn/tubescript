@@ -1,4 +1,4 @@
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   const timestamp = new Date().toISOString();
   const environment = {
     nodeEnv: process.env.NODE_ENV || 'unknown',

@@ -1,25 +1,11 @@
-// Use dynamic import for node-fetch in serverless environment
-let fetchModule;
-
-// This pattern allows for both ESM and CJS environments
-async function getFetch() {
-  if (!fetchModule) {
-    try {
-      // Try ESM import first (this is how it would work in newer Node versions)
-      fetchModule = await import('node-fetch');
-    } catch (error) {
-      // Fallback to CommonJS require (for older Node versions or certain environments)
-      fetchModule = { default: require('node-fetch') };
-    }
-  }
-  return fetchModule.default;
-}
+// CommonJS style - more compatible with Vercel
+const fetch = require('node-fetch');
 
 /**
  * Serverless function to proxy YouTube requests
  * This helps bypass CORS and blocking issues when deployed on Vercel
  */
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -56,9 +42,6 @@ export default async function handler(req, res) {
     }
 
     console.log(`[YouTube Proxy] Fetching: ${decodedUrl}`);
-    
-    // Get the fetch function
-    const fetch = await getFetch();
     
     // Use a more browser-like user agent to avoid being blocked
     const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
